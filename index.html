@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#0f0f0f">
     <title>ContadorMus</title>
     <style>
         :root {
@@ -13,11 +14,10 @@
             --bg-card-highlight: #252525;
             --border: #333;
             
-            /* Colores de Equipos */
+            /* Colores Puros */
             --blue: #3b82f6;
-            --blue-dim: rgba(59, 130, 246, 0.1);
             --red: #ef4444;
-            --red-dim: rgba(239, 68, 68, 0.1);
+            --gold: #fbbf24;
             
             /* Textos */
             --text-white: #f3f4f6;
@@ -25,7 +25,7 @@
             --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
 
-        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; outline: none; }
+        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; outline: none; touch-action: manipulation; }
 
         body {
             margin: 0;
@@ -33,335 +33,324 @@
             color: var(--text-white);
             font-family: var(--font-main);
             height: 100vh;
+            width: 100vw;
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            transition: background-color 0.3s;
+        }
+
+        /* --- OLED MODE --- */
+        body.oled-mode { 
+            --bg-body: #000000; 
+            --bg-card: #000000; 
+            --bg-card-highlight: #151515;
+            --border: #333; 
+        }
+
+        /* --- ROTATE OVERLAY (FIXED ANIMATION) --- */
+        #rotate-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #050505; z-index: 9999;
+            display: none;
+            flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; padding: 20px;
+        }
+        
+        .rotate-icon { width: 100px; height: 100px; margin-bottom: 20px; position: relative; }
+        
+        .rotate-icon svg { 
+            width: 100%; height: 100%; 
+            fill: none; stroke: white; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+            overflow: visible;
+        }
+
+        .phone-shape { 
+            transform-origin: 50% 50%; 
+            animation: rotateSimple 2.5s infinite ease-in-out; 
+        }
+
+        @keyframes rotateSimple { 
+            0%, 15% { transform: rotate(0deg); } 
+            50%, 65% { transform: rotate(-90deg); } 
+            100% { transform: rotate(0deg); } 
+        }
+        
+        .rotate-text { font-size: 1.2rem; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: 1px; }
+        .rotate-sub { font-size: 0.9rem; color: #666; margin-top: 10px; }
+        
+        @media screen and (orientation: portrait) and (max-width: 900px) { #rotate-overlay { display: flex; } }
+
+        /* --- ANIMATIONS --- */
+        @keyframes flashBlueSolid { 0% { background: var(--bg-card); } 10% { background: var(--blue); } 100% { background: var(--bg-card); } }
+        @keyframes flashRedSolid { 0% { background: var(--bg-card); } 10% { background: var(--red); } 100% { background: var(--bg-card); } }
+        .anim-win-blue { animation: flashBlueSolid 0.8s ease-out; }
+        .anim-win-red { animation: flashRedSolid 0.8s ease-out; }
+
+        /* Confetti */
+        #confetti-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 300; display: none; overflow: hidden;
+        }
+        .confetti-piece {
+            position: absolute; width: 14px; height: 14px;
+            animation: fall linear forwards;
+        }
+        @keyframes fall { 
+            0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; } 
         }
 
         /* --- HEADER --- */
         header {
-            height: 55px;
-            flex-shrink: 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 15px;
-            border-bottom: 1px solid var(--border);
-            background: rgba(20, 20, 20, 0.95);
-            backdrop-filter: blur(10px);
-            z-index: 10;
+            height: 55px; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center;
+            padding: 0 15px; border-bottom: 1px solid var(--border); background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(10px); z-index: 10;
         }
-
         .logo { font-weight: 800; letter-spacing: 1px; font-size: 1rem; color: var(--text-white); }
+        .header-actions { display: flex; gap: 20px; align-items: center; }
         
-        .header-actions { display: flex; gap: 10px; }
         .icon-btn {
-            background: transparent; border: 1px solid var(--border); color: var(--text-white);
-            width: 36px; height: 36px; border-radius: 8px; font-size: 1.1rem;
-            display: flex; align-items: center; justify-content: center; cursor: pointer;
-            transition: 0.2s;
+            background: transparent; border: none; color: var(--text-white); width: 28px; height: 28px; 
+            cursor: pointer; padding: 0; transition: 0.2s; display: flex; align-items: center; justify-content: center;
         }
-        .icon-btn:active { background: var(--bg-card-highlight); transform: scale(0.95); }
+        .icon-btn svg { 
+            width: 24px; height: 24px; 
+            fill: none; stroke: #ccc; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+        }
+        .icon-btn:active svg { stroke: white; transform: scale(0.9); }
 
-        /* --- MAIN LAYOUT --- */
-        main {
-            flex: 1;
-            display: grid;
-            grid-template-columns: 1fr 180px 1fr; 
-            gap: 8px;
-            padding: 10px;
-            height: calc(100vh - 55px);
-        }
+        /* --- MAIN LAYOUT (Width Correction) --- */
+        main { flex: 1; display: grid; grid-template-columns: 1fr 270px 1fr; gap: 8px; padding: 10px; height: calc(100vh - 55px); }
 
         /* --- TEAM COLUMNS --- */
         .team-panel {
-            background: var(--bg-card);
-            border-radius: 16px;
-            border: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 10px 5px;
-            position: relative;
-            cursor: pointer;
-            transition: background 0.1s;
-            justify-content: flex-start; 
+            background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border);
+            display: flex; flex-direction: column; align-items: center; padding: 10px 5px; position: relative; cursor: pointer;
+            transition: background 0.1s; justify-content: flex-start; 
         }
         .team-panel:active { background: var(--bg-card-highlight); }
-        
         .team-blue { border-top: 4px solid var(--blue); box-shadow: 0 0 15px rgba(59, 130, 246, 0.05); }
         .team-red { border-top: 4px solid var(--red); box-shadow: 0 0 15px rgba(239, 68, 68, 0.05); }
 
-        /* Inputs & Mano */
-        .names-group { 
-            width: 100%; text-align: center; z-index: 2; margin-bottom: 5px; 
-            display: flex; flex-direction: column; align-items: center; 
-        }
+        /* Inputs */
+        .names-group { width: 100%; text-align: center; z-index: 2; margin-bottom: 10px; display: flex; flex-direction: column; align-items: center; }
         
-        .mano-btn {
-            font-size: 0.6rem; font-weight: 900; letter-spacing: 1px;
-            padding: 3px 8px; border-radius: 10px; margin-bottom: 4px;
-            background: #252525; color: #555; border: 1px solid #333;
-            cursor: pointer; transition: 0.3s;
-        }
-        .team-blue .mano-btn.active { background: var(--blue); color: white; border-color: var(--blue); box-shadow: 0 0 10px var(--blue-dim); }
-        .team-red .mano-btn.active { background: var(--red); color: white; border-color: var(--red); box-shadow: 0 0 10px var(--red-dim); }
-
         .team-name-input {
-            background: transparent; border: none; 
-            text-align: center; width: 98%; font-size: 0.9rem; margin-bottom: 4px;
+            background: transparent; border: none; text-align: center; width: 98%; font-size: 0.9rem; margin-bottom: 4px;
             padding: 4px; border-radius: 4px; font-weight: 800; text-transform: uppercase;
         }
+        
         .team-blue .team-name-input { color: var(--blue); }
+        .team-blue .team-name-input::placeholder { color: var(--blue); opacity: 1; }
+
         .team-red .team-name-input { color: var(--red); }
-        .team-name-input:focus { background: #333; }
+        .team-red .team-name-input::placeholder { color: var(--red); opacity: 1; }
+        
+        .team-name-input:focus { background: #333; outline: none; }
 
         .player-input {
-            background: transparent; border: none; color: var(--text-gray);
-            text-align: center; width: 95%; font-size: 0.75rem; margin-bottom: 1px;
-            padding: 2px; border-radius: 4px; font-weight: 500;
+            background: transparent; border: none; color: var(--text-gray); text-align: center; width: 95%; 
+            font-size: 0.75rem; margin-bottom: 1px; padding: 2px; border-radius: 4px; font-weight: 600;
         }
         .player-input:focus { background: #333; color: white; }
 
-        /* Score Area */
-        .score-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
-            pointer-events: none;
-        }
-
+        /* Score */
+        .score-container { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%; pointer-events: none; }
         .sets-row { display: flex; gap: 8px; margin-bottom: 25px; height: 12px; }
         .set-dot { width: 10px; height: 10px; border-radius: 50%; background: #333; transition: 0.3s; border: 1px solid rgba(255,255,255,0.1); }
-        .team-blue .set-dot.active { background: var(--blue); box-shadow: 0 0 8px var(--blue); border-color: var(--blue); }
-        .team-red .set-dot.active { background: var(--red); box-shadow: 0 0 8px var(--red); border-color: var(--red); }
+        .team-blue .set-dot.active { background: var(--blue); border-color: var(--blue); }
+        .team-red .set-dot.active { background: var(--red); border-color: var(--red); }
+        .score-big { font-size: 5rem; font-weight: 800; line-height: 0.9; text-shadow: 0 4px 10px rgba(0,0,0,0.5); }
 
-        .score-big {
-            font-size: 5rem; font-weight: 200; line-height: 0.9;
-            text-shadow: 0 4px 10px rgba(0,0,0,0.5);
-        }
-
-        /* Botones de Equipo */
+        /* Buttons */
         .team-bottom { width: 100%; display: flex; flex-direction: column; gap: 8px; z-index: 5; }
-        .team-increments { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 0 4px; }
+        .team-increments { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; padding: 0 4px; } 
+        
         .t-inc-btn {
-            background: #2a2a2a; border: none; color: #ccc; border-radius: 6px; 
-            padding: 12px 0; font-size: 0.9rem; cursor: pointer; font-weight: 700;
+            background: #2a2a2a; border: 1px solid #333; color: #fff; border-radius: 6px; 
+            padding: 14px 0; /* HEIGHT CONSISTENCY */
+            font-size: 0.9rem; cursor: pointer; font-weight: 700;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
-        .t-inc-btn.minus { color: #ff8888; background: rgba(60, 20, 20, 0.5); }
-        .t-inc-btn:active { background: #444; color: white; transform: translateY(1px); }
+        .t-inc-btn.minus { background: transparent; border: 1px solid #444; color: #888; box-shadow: none; }
+        .t-inc-btn.minus:active { background: rgba(255,255,255,0.05); color: #ccc; }
+        .t-inc-btn:active:not(.minus) { background: #444; }
 
-        /* Órdago */
         .btn-ordago {
-            padding: 12px 0; border-radius: 8px; 
-            font-size: 0.8rem; font-weight: 800; letter-spacing: 1px;
-            margin: 0 4px; cursor: pointer; 
-            display: flex; justify-content: center; align-items: center; gap: 6px;
-            transition: 0.2s; border-width: 1px; border-style: solid;
+            padding: 12px 0; border-radius: 8px; font-size: 0.8rem; font-weight: 800; letter-spacing: 1px;
+            margin: 0 4px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 6px;
+            transition: 0.2s; border-width: 2px; border-style: solid;
+            background: #2a2a2a; color: #fff; border: 1px solid #333;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
-        .ordago-blue { background: var(--blue-dim); border-color: rgba(59, 130, 246, 0.3); color: var(--blue); }
-        .ordago-blue:active { background: var(--blue); color: white; }
-        .ordago-red { background: var(--red-dim); border-color: rgba(239, 68, 68, 0.3); color: var(--red); }
-        .ordago-red:active { background: var(--red); color: white; }
+        .btn-ordago:active { background: #444; }
 
-        /* --- CENTER COLUMN & ACTIONS --- */
+        /* --- CENTER (Height Consistency Fix) --- */
         .center-panel { 
             display: flex; flex-direction: column; 
-            justify-content: space-between; 
             height: 100%;
         }
-        
-        /* Bloque central (Limpiar + Envites) Centrado Verticalmente */
-        .center-content {
-            flex: 1;
-            display: flex; flex-direction: column; gap: 8px; 
-            justify-content: center; /* CLAVE: Centrado Vertical */
-        }
+        .center-content { flex: 1; display: flex; flex-direction: column; gap: 8px; justify-content: center; }
 
-        .envite-card {
-            background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
-            padding: 5px; display: flex; flex-direction: column;
-        }
-        .envite-header { 
-            display: flex; justify-content: center; /* Centrado de títulos */
-            align-items: center; margin-bottom: 4px; padding: 0 2px; 
-        }
-        .envite-label { font-size: 0.6rem; text-transform: uppercase; color: var(--text-gray); font-weight: bold; letter-spacing: 1px; }
+        .envite-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 5px; display: flex; flex-direction: column; }
+        .envite-header { display: flex; justify-content: center; align-items: center; margin-bottom: 4px; padding: 0 2px; }
+        .envite-label { font-size: 0.6rem; text-transform: uppercase; color: var(--text-gray); font-weight: 700; letter-spacing: 1px; }
+        .envite-main-row { display: flex; justify-content: space-between; align-items: center; background: #111; border-radius: 6px; padding: 2px 5px; gap: 5px; margin-bottom: 8px; }
         
-        .envite-main-row {
-            display: flex; justify-content: space-between; align-items: center;
-            background: #111; border-radius: 6px; padding: 2px; margin-bottom: 4px;
+        /* HEIGHT CONSISTENCY: Envite Value and Increments */
+        .arrow-btn { 
+            background: none; border: none; width: 45px; height: 45px; cursor: pointer; 
+            display: flex; align-items: center; justify-content: center; padding: 0;
         }
-        .arrow-btn { background: none; border: none; font-size: 1.2rem; padding: 2px 8px; cursor: pointer; }
-        .arrow-l { color: var(--blue); }
-        .arrow-r { color: var(--red); }
+        .arrow-btn svg { 
+            width: 18px; height: 18px; fill: none; stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.1s; 
+        }
+        .arrow-btn:active svg { transform: scale(1.2); }
+        .arrow-l svg { stroke: var(--blue); }
+        .arrow-r svg { stroke: var(--red); }
+        
         .envite-val { 
-            font-size: 1.3rem; font-weight: 700; color: white; min-width: 35px; 
-            text-align: center; cursor: pointer; padding: 2px 5px; border-radius: 4px;
+            font-size: 1.3rem; font-weight: 800; color: white; 
+            text-align: center; cursor: pointer; 
+            padding: 14px 5px; /* HEIGHT CONSISTENCY */
+            border-radius: 4px; 
+            flex-grow: 1; 
         }
         .envite-val:active { background: rgba(255,255,255,0.1); }
-        .increments-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; }
-        .inc-btn {
-            background: #2a2a2a; border: none; color: #aaa; border-radius: 4px;
-            padding: 8px 0; font-size: 0.75rem; font-weight: bold; cursor: pointer;
-        }
-        .inc-btn.minus { color: #ff8888; background: rgba(60, 20, 20, 0.5); }
-        .inc-btn:active { background: #444; color: white; }
 
-        /* Botones Utilitarios Centrales */
-        .utility-btn {
-            background: #222; border: 1px solid #444; color: #888;
-            border-radius: 8px; font-weight: bold; cursor: pointer;
-            text-transform: uppercase; letter-spacing: 1px;
-            transition: 0.2s; width: 100%; padding: 12px 0; font-size: 0.8rem;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        .increments-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; } 
+        .inc-btn { 
+            background: #2a2a2a; border: 1px solid #333; color: #fff; border-radius: 6px; 
+            padding: 14px 0; /* HEIGHT CONSISTENCY */
+            font-size: 0.75rem; font-weight: 700; cursor: pointer; 
         }
+        .inc-btn.minus { background: transparent; border: 1px solid #444; color: #888; box-shadow: none; }
+        .inc-btn.minus:active { background: rgba(255,255,255,0.05); color: #ccc; }
+        .inc-btn:active:not(.minus) { background: #444; }
+
+        .center-bottom-actions { margin-top: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+        .utility-btn { background: #222; border: 1px solid #333; color: #fff; border-radius: 8px; font-weight: 800; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: 0.2s; width: 100%; padding: 12px 0; font-size: 0.8rem; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
         .utility-btn:active { background: #444; color: white; }
-
-        /* Botón Limpiar (Integrado en el bloque central) */
-        .btn-clear {
-            /* No margin needed as gap is handled by center-content */
-        }
-        
-        /* Area inferior para Deshacer */
-        .center-bottom-actions {
-            /* Margen para alinear con la botonera de equipos */
-            margin-bottom: 55px; 
-        }
-        .btn-undo-center {
-            padding: 15px 0; font-size: 0.85rem; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
+        .btn-undo-center { padding: 15px 0; font-size: 0.85rem; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
 
         /* --- MODALS --- */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
-            z-index: 100; display: none; align-items: center; justify-content: center;
-        }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 100; display: none; align-items: center; justify-content: center; }
+        #genericModal, #ordagoModal { z-index: 200; }
         .modal-overlay.active { display: flex; }
-        .modal-card {
-            background: #1e1e1e; width: 90%; max-width: 380px;
-            border-radius: 20px; padding: 25px; max-height: 90vh; overflow-y: auto;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.8); border: 1px solid #444;
-            animation: popIn 0.2s ease-out;
-        }
-        @keyframes popIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-
-        .modal-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 20px; display: flex; justify-content: space-between; color: var(--text-white); }
-        .close-x { cursor: pointer; color: var(--text-gray); padding: 5px; }
-        .btn-primary { width: 100%; padding: 12px; background: var(--blue); color: white; border: none; border-radius: 10px; font-size: 1rem; font-weight: bold; margin-top: 20px; cursor: pointer; }
-        .btn-danger { width: 100%; padding: 12px; background: transparent; color: var(--red); border: 1px solid var(--red); border-radius: 10px; font-size: 1rem; margin-top: 10px; cursor: pointer; }
-        .setting-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #333; }
-        select, input[type="number"] { background: #333; color: white; border: 1px solid #555; padding: 8px; border-radius: 6px; font-size: 1rem; }
+        .modal-card { background: #1e1e1e; width: 90%; max-width: 350px; border-radius: 20px; padding: 25px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.8); border: 1px solid #444; animation: popIn 0.2s ease-out; text-align: center;}
+        @keyframes popIn { from { opacity: 0; transform: scale(0.95); } to { transform: scale(1); } }
+        .modal-title { font-size: 1.2rem; font-weight: 800; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; color: var(--text-white); }
+        .close-x { cursor: pointer; color: var(--text-gray); padding: 5px; font-weight: bold; }
+        .modal-footer { display: flex; gap: 10px; margin-top: 20px; width: 100%; }
+        .btn-modal-action { flex: 1; padding: 14px; border-radius: 12px; font-size: 1rem; font-weight: 800; cursor: pointer; transition: background 0.1s; text-transform: uppercase; letter-spacing: 0.5px; }
+        .btn-modal-primary { background: #e0e0e0; color: #000; border: none; box-shadow: 0 2px 10px rgba(255,255,255,0.1); }
+        .btn-modal-primary:active { background: #fff; }
+        .btn-modal-secondary { background: transparent; color: #888; border: 1px solid #444; }
+        .btn-modal-secondary:active { background: #222; color: #ccc; }
+        .setting-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #333; text-align: left; }
+        select, input[type="number"] { background: #333; color: white; border: 1px solid #555; padding: 8px; border-radius: 6px; font-size: 1rem; font-weight: 700; }
+        
+        /* CREDITS & TOGGLES */
+        .credits-box { margin-top: 20px; padding-top: 20px; border-top: 1px solid #333; text-align: center; color: #666; font-size: 0.8rem; display: flex; flex-direction: column; gap: 5px; }
+        .credits-row { display: flex; justify-content: center; gap: 5px; }
+        .credits-label { color: #666; }
+        .credits-name { color: #888; font-weight: 700; text-decoration: none; transition: color 0.2s; }
+        .credits-name:hover { color: #fff; }
+        
+        /* Switch */
+        .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #444; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #fff; }
+        input:checked + .slider:before { transform: translateX(24px); background-color: #000; }
 
         /* --- HISTORY --- */
-        .history-item {
-            background: #222; border-radius: 8px; margin-bottom: 12px; 
-            border: 1px solid #333; overflow: hidden;
-            border-left: 4px solid #444;
-        }
-        .history-item.winner-blue { border-left-color: var(--blue); }
-        .history-item.winner-red { border-left-color: var(--red); }
-
-        .h-summary { 
-            padding: 20px 15px; cursor: pointer; 
-            display: flex; flex-direction: column; 
-            align-items: center; justify-content: center; gap: 8px;
-        }
+        #historyList::-webkit-scrollbar { width: 0; }
+        #historyList { -ms-overflow-style: none; scrollbar-width: none; }
+        .history-item { background: #222; border-radius: 8px; margin-bottom: 12px; border: 1px solid #333; overflow: hidden; border-left: none; border-right: none; }
+        .history-item.winner-blue { border-left: 4px solid var(--blue); }
+        .history-item.winner-red { border-right: 4px solid var(--red); }
+        .h-summary { padding: 20px 15px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
         .h-summary:hover { background: #2a2a2a; }
-        
         .h-date-small { font-size: 0.7rem; color: #666; margin-bottom: 2px; }
-        
-        .h-header-teams { 
-            font-weight: 800; font-size: 1.1rem; color: #eee; text-transform: uppercase;
-            text-align: center; width: 100%;
-            display: flex; justify-content: center; align-items: center; gap: 8px;
-        }
-
-        .h-players-row {
-            font-size: 0.75rem; color: #999; text-align: center; 
-            margin-bottom: 5px; width: 100%;
-            display: flex; justify-content: center; gap: 10px;
-        }
-
-        .h-result { 
-            font-size: 1.8rem; font-weight: 900; background: #111; 
-            padding: 8px 20px; border-radius: 8px; border: 1px solid #333;
-            letter-spacing: 2px;
-        }
+        .h-header-teams { font-weight: 800; font-size: 1.1rem; color: #eee; text-transform: uppercase; text-align: center; width: 100%; display: flex; justify-content: center; align-items: center; gap: 8px; }
+        .h-players-row { font-size: 0.75rem; color: #999; text-align: center; margin-bottom: 5px; width: 100%; display: flex; justify-content: center; gap: 10px; }
+        .h-result { font-size: 1.8rem; font-weight: 800; background: #111; padding: 8px 20px; border-radius: 8px; border: 1px solid #333; letter-spacing: 2px; }
         .h-blue { color: var(--blue); }
         .h-red { color: var(--red); }
-        
         .h-col-blue { text-align: center; color: var(--blue); font-weight: 700; }
         .h-col-red { text-align: center; color: var(--red); font-weight: 700; }
         .h-col-white { text-align: center; color: rgba(255,255,255,0.3); font-weight: 400; } 
-
         .h-details { padding: 0; background: #1d1d1d; display: none; border-top: 1px solid #333; }
         .history-item.open .h-details { display: block; }
-
-        .h-grid-row {
-            display: grid;
-            grid-template-columns: 1fr 100px 1fr; 
-            align-items: center; text-align: center;
-            padding: 12px 10px; border-bottom: 1px solid #2a2a2a;
-        }
+        .h-grid-row { display: grid; grid-template-columns: 1fr 100px 1fr; align-items: center; text-align: center; padding: 12px 10px; border-bottom: 1px solid #2a2a2a; }
         .h-grid-row:last-child { border-bottom: none; }
-        
         .h-col-center { text-align: center; color: #888; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; }
         .h-total-row { background: #252525; font-weight: 800; font-size: 1rem; }
+
+        /* --- VICTORY SCREEN STYLES --- */
+        .victory-team { font-size: 1.6rem; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; display: block; margin: 20px 0 15px 0; }
+        .victory-score { font-size: 3rem; font-weight: 800; color: white; background: #111; padding: 10px 30px; border-radius: 12px; border: 1px solid #333; display: inline-block; }
 
     </style>
 </head>
 <body>
 
+    <div id="confetti-container"></div>
+
+    <div id="rotate-overlay">
+        <div class="rotate-icon">
+            <svg viewBox="0 0 100 100">
+                <rect x="35" y="25" width="30" height="50" rx="3" ry="3" fill="none" stroke="white" stroke-width="3" class="phone-shape" />
+                <path d="M50 68 h0.01" stroke="white" stroke-width="3" stroke-linecap="round" class="phone-shape"/>
+            </svg>
+        </div>
+        <div class="rotate-text">Gira tu dispositivo</div>
+        <div class="rotate-sub">Esta App está diseñada para usarse en horizontal</div>
+    </div>
+
     <header>
         <div class="logo">ContadorMus</div>
         <div class="header-actions">
-            <button class="icon-btn" onclick="askSaveMatch()" title="Guardar">💾</button>
-            <button class="icon-btn" onclick="openModal('historyModal')" title="Historial">📜</button>
-            <button class="icon-btn" onclick="openModal('settingsModal')" title="Ajustes">⚙️</button>
+            <button class="icon-btn" onclick="askSaveMatch()" title="Guardar">
+                <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            </button>
+            <button class="icon-btn" onclick="openModal('historyModal')" title="Historial">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </button>
+            <button class="icon-btn" onclick="openModal('settingsModal')" title="Ajustes">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </button>
         </div>
     </header>
 
     <main>
-        <div class="team-panel team-blue" onclick="addPoint(1, 1)">
+        <div class="team-panel team-blue" id="panel-1" onclick="addPoint(1, 1)">
             <div class="names-group" onclick="event.stopPropagation()">
-                <button class="mano-btn" id="mano1" onclick="setMano(1)">MANO</button>
-                <input id="team1Name" class="team-name-input" placeholder="EQUIPO AZUL" value="EQUIPO AZUL" onchange="saveState()">
+                <input id="team1Name" class="team-name-input" placeholder="EQUIPO AZUL" onchange="saveState()">
                 <input id="p1a" class="player-input" placeholder="Jugador 1" onchange="saveState()">
                 <input id="p1b" class="player-input" placeholder="Jugador 2" onchange="saveState()">
             </div>
-            
             <div class="score-container">
                 <div class="sets-row" id="sets1"></div>
                 <div class="score-big" id="score1">0</div>
             </div>
-            
             <div class="team-bottom" onclick="event.stopPropagation()">
                 <div class="team-increments">
-                    <button class="t-inc-btn minus" onclick="addPoint(1, -1)">-1</button>
-                    <button class="t-inc-btn" onclick="addPoint(1, 1)">+1</button>
-                    <button class="t-inc-btn" onclick="addPoint(1, 2)">+2</button>
-                    <button class="t-inc-btn" onclick="addPoint(1, 5)">+5</button>
+                    <button class="t-inc-btn minus" onclick="event.stopPropagation(); addPoint(1, -1)">-1</button>
+                    <button class="t-inc-btn" onclick="event.stopPropagation(); addPoint(1, 1)">+1</button>
+                    <button class="t-inc-btn" onclick="event.stopPropagation(); addPoint(1, 2)">+2</button>
+                    <button class="t-inc-btn" onclick="event.stopPropagation(); addPoint(1, 3)">+3</button>
+                    <button class="t-inc-btn" onclick="event.stopPropagation(); addPoint(1, 5)">+5</button>
                 </div>
-                <button class="btn-ordago ordago-blue" onclick="preTriggerOrdago(1)">
-                    <span>⚡</span> ÓRDAGO
-                </button>
+                <button class="btn-ordago" onclick="event.stopPropagation(); preTriggerOrdago(1)">ÓRDAGO</button>
             </div>
         </div>
 
         <div class="center-panel">
-            
             <div class="center-content">
-                <button class="utility-btn btn-clear" onclick="clearCenter()">
-                     LIMPIAR
-                </button>
-
+                <button class="utility-btn btn-clear" onclick="clearCenter()" style="margin-bottom: 0;">LIMPIAR</button>
                 <script>
                     const enviteTypes = ['grande', 'chica', 'pares', 'juego'];
                     enviteTypes.forEach(type => {
@@ -369,63 +358,64 @@
                             <div class="envite-card">
                                 <div class="envite-header"><span class="envite-label">${type}</span></div>
                                 <div class="envite-main-row">
-                                    <button class="arrow-btn arrow-l" onclick="assignEnvite('${type}', 1)">◄</button>
+                                    <button class="arrow-btn arrow-l" onclick="event.stopPropagation(); assignEnvite('${type}', 1)">
+                                        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+                                    </button>
                                     <span class="envite-val" id="val-${type}" onclick="modEnvite('${type}', 1)">0</span>
-                                    <button class="arrow-btn arrow-r" onclick="assignEnvite('${type}', 2)">►</button>
+                                    <button class="arrow-btn arrow-r" onclick="event.stopPropagation(); assignEnvite('${type}', 2)">
+                                        <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+                                    </button>
                                 </div>
                                 <div class="increments-row">
-                                    <button class="inc-btn minus" onclick="modEnvite('${type}', -1)">-1</button>
-                                    <button class="inc-btn" onclick="modEnvite('${type}', 1)">+1</button>
-                                    <button class="inc-btn" onclick="modEnvite('${type}', 2)">+2</button>
-                                    <button class="inc-btn" onclick="modEnvite('${type}', 5)">+5</button>
+                                    <button class="inc-btn minus" onclick="event.stopPropagation(); modEnvite('${type}', -1)">-1</button>
+                                    <button class="inc-btn" onclick="event.stopPropagation(); modEnvite('${type}', 1)">+1</button>
+                                    <button class="inc-btn" onclick="event.stopPropagation(); modEnvite('${type}', 2)">+2</button>
+                                    <button class="inc-btn" onclick="event.stopPropagation(); modEnvite('${type}', 3)">+3</button>
+                                    <button class="inc-btn" onclick="event.stopPropagation(); modEnvite('${type}', 5)">+5</button>
                                 </div>
                             </div>
                         `);
                     });
                 </script>
             </div>
-
             <div class="center-bottom-actions">
-                <button class="utility-btn btn-undo-center" onclick="undo()">
-                    DESHACER
-                </button>
+                <button class="utility-btn btn-undo-center" onclick="undo()">DESHACER</button>
             </div>
-
         </div>
 
-        <div class="team-panel team-red" onclick="addPoint(2, 1)">
+        <div class="team-panel team-red" id="panel-2" onclick="addPoint(2, 1)">
             <div class="names-group" onclick="event.stopPropagation()">
-                <button class="mano-btn" id="mano2" onclick="setMano(2)">MANO</button>
-                <input id="team2Name" class="team-name-input" placeholder="EQUIPO ROJO" value="EQUIPO ROJO" onchange="saveState()">
+                <input id="team2Name" class="team-name-input" placeholder="EQUIPO ROJO" onchange="saveState()">
                 <input id="p2a" class="player-input" placeholder="Jugador 3" onchange="saveState()">
                 <input id="p2b" class="player-input" placeholder="Jugador 4" onchange="saveState()">
             </div>
-
             <div class="score-container">
                 <div class="sets-row" id="sets2"></div>
                 <div class="score-big" id="score2">0</div>
             </div>
-            
             <div class="team-bottom" onclick="event.stopPropagation()">
                 <div class="team-increments">
-                    <button class="t-inc-btn minus" onclick="addPoint(2, -1)">-1</button>
-                    <button class="t-inc-btn" onclick="addPoint(2, 1)">+1</button>
-                    <button class="t-inc-btn" onclick="addPoint(2, 2)">+2</button>
-                    <button class="t-inc-btn" onclick="addPoint(2, 5)">+5</button>
+                    <button class="t-inc-btn minus" onclick="event.stopPropagation(); addPoint(2, -1)">-1</button>
+                    <button class="t-inc-btn" onclick="event.stopPropagation(); addPoint(2, 1)">+1</button>
+                    <button class="t-inc-btn" onclick="event.stopPropagation(); addPoint(2, 2)">+2</button>
+                    <button class="t-inc-btn" onclick="event.stopPropagation(); addPoint(2, 3)">+3</button>
+                    <button class="t-inc-btn" onclick="event.stopPropagation(); addPoint(2, 5)">+5</button>
                 </div>
-                <button class="btn-ordago ordago-red" onclick="preTriggerOrdago(2)">
-                    <span>⚡</span> ÓRDAGO
-                </button>
+                <button class="btn-ordago" onclick="event.stopPropagation(); preTriggerOrdago(2)">ÓRDAGO</button>
             </div>
         </div>
     </main>
 
     <div id="genericModal" class="modal-overlay" onclick="closeModal(event, 'genericModal')">
-        <div class="modal-card" style="text-align: center;">
+        <div class="modal-card">
             <div class="modal-title" style="justify-content: center;" id="genericTitle">Aviso</div>
-            <p style="margin-bottom: 20px; color: #ccc; line-height: 1.5;" id="genericText">Mensaje...</p>
-            <button class="btn-primary" id="genericConfirmBtn">Aceptar</button>
-            <button class="btn-danger" style="border: none; color: #888" onclick="closeModalDirect('genericModal')">Cancelar</button>
+            <div id="genericContent">
+                <p style="margin-bottom: 20px; color: #ccc; line-height: 1.5;" id="genericText">Mensaje...</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal-action btn-modal-primary" id="genericConfirmBtn">Aceptar</button>
+                <button class="btn-modal-action btn-modal-secondary" onclick="closeModalDirect('genericModal')">Cancelar</button>
+            </div>
         </div>
     </div>
 
@@ -440,8 +430,34 @@
                 <span>Juegos para Ganar</span>
                 <input type="number" id="vacasInput" value="3" min="1" max="9" style="width: 60px; text-align: center;" onchange="saveSettings()">
             </div>
-            <button class="btn-primary" onclick="closeModalDirect('settingsModal')">Aceptar</button>
-            <button class="btn-danger" onclick="askResetMatch()">Reiniciar Partida</button>
+            <div class="setting-item">
+                <span>Pantalla siempre activa</span>
+                <label class="switch">
+                    <input type="checkbox" id="wakeLockToggle" onchange="toggleWakeLock()" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="setting-item">
+                <span>Modo OLED (Ahorro Bat.)</span>
+                <label class="switch">
+                    <input type="checkbox" id="oledToggle" onchange="toggleOLED()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal-action btn-modal-primary" onclick="closeModalDirect('settingsModal')">Aceptar</button>
+                <button class="btn-modal-action btn-modal-secondary" onclick="askResetMatch()">Reiniciar</button>
+            </div>
+            <div class="credits-box">
+                <div class="credits-row">
+                    <span class="credits-label">Desarrollado por</span>
+                    <a href="https://github.com/aaangelmartin" target="_blank" class="credits-name">aaangelmartin</a>
+                </div>
+                <div class="credits-row">
+                    <span class="credits-label">Creado con</span>
+                    <span class="credits-name" style="color:#888; font-weight:700">Gemini</span>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -449,71 +465,159 @@
         <div class="modal-card">
             <div class="modal-title">Historial <span class="close-x" onclick="closeModalDirect('historyModal')">✕</span></div>
             <div id="historyList" style="max-height: 500px; overflow-y: auto; padding-right: 5px;"></div>
-            <div style="display: flex; gap: 10px;">
-                <button class="btn-primary" style="flex:1; margin-top:15px" onclick="askExportHistory()">Descargar</button>
-                <button class="btn-danger" style="flex:1; margin-top:15px;" onclick="askClearHistory()">Borrar</button>
+            <div class="modal-footer">
+                <button class="btn-modal-action btn-modal-primary" onclick="askExportHistory()">Descargar</button>
+                <button class="btn-modal-action btn-modal-secondary" onclick="askClearHistory()">Borrar</button>
             </div>
         </div>
     </div>
 
     <div id="ordagoModal" class="modal-overlay" onclick="closeModal(event, 'ordagoModal')">
-        <div class="modal-card" style="text-align: center;">
-            <div class="modal-title" style="justify-content: center; font-size: 1.5rem;" id="ordagoTitle">⚡ ÓRDAGO</div>
+        <div class="modal-card">
+            <div class="modal-title" style="justify-content: center;" id="ordagoTitle">ÓRDAGO</div>
             <p style="margin-bottom: 20px; color: #ccc;" id="ordagoText">¿El Equipo X gana el juego?</p>
-            <button class="btn-primary" id="ordagoConfirmBtn" onclick="confirmOrdago()">CONFIRMAR VICTORIA</button>
-            <button class="btn-danger" style="border: none; color: #888" onclick="closeModalDirect('ordagoModal')">Cancelar</button>
+            <div class="modal-footer">
+                <button class="btn-modal-action btn-modal-primary" id="ordagoConfirmBtn" onclick="confirmOrdago()">CONFIRMAR</button>
+                <button class="btn-modal-action btn-modal-secondary" onclick="closeModalDirect('ordagoModal')">Cancelar</button>
+            </div>
         </div>
     </div>
 
     <script>
-        let state = { s1: 0, s2: 0, v1: 0, v2: 0, envites: { grande: 0, chica: 0, pares: 0, juego: 0 }, currentMatchLog: [], startDate: new Date().getTime(), mano: 1 };
-        let settings = { limit: 30, vacasNeeded: 3 };
+        let state = { s1: 0, s2: 0, v1: 0, v2: 0, envites: { grande: 0, chica: 0, pares: 0, juego: 0 }, currentMatchLog: [], startDate: new Date().getTime() };
+        let settings = { limit: 30, vacasNeeded: 3, oled: false, wakeLock: true };
         let historyStack = []; 
         let pendingOrdagoTeam = 0; 
+        let wakeLockSentinel = null;
 
-        document.addEventListener('DOMContentLoaded', () => { loadSettings(); loadState(); renderUI(); });
+        document.addEventListener('DOMContentLoaded', () => { 
+            loadSettings(); loadState(); renderUI(); 
+            applyOLED(); handleWakeLock();
+            document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') handleWakeLock(); });
+            window.addEventListener('beforeunload', (e) => { e.preventDefault(); e.returnValue = ''; });
+        });
 
-        // --- LOGIC ---
-        function pushHistory() { historyStack.push(JSON.parse(JSON.stringify(state))); if(historyStack.length > 10) historyStack.shift(); }
-        function undo() { if(historyStack.length === 0) return; state = historyStack.pop(); saveState(); renderUI(); }
-        
-        // Clear center visual only
-        function clearCenter() {
-            state.envites = { grande: 0, chica: 0, pares: 0, juego: 0 };
-            renderUI(); 
+        function haptic() { if (navigator.vibrate) navigator.vibrate(10); }
+
+        function toggleOLED() {
+            settings.oled = document.getElementById('oledToggle').checked;
+            saveSettings(); applyOLED(); haptic();
+        }
+        function applyOLED() { 
+            if (settings.oled) document.body.classList.add('oled-mode'); 
+            else document.body.classList.remove('oled-mode'); 
+            document.getElementById('oledToggle').checked = settings.oled; 
         }
 
-        function addPoint(team, amount) { pushHistory(); if(team === 1) state.s1 = Math.max(0, state.s1 + amount); else state.s2 = Math.max(0, state.s2 + amount); checkWinRound(); saveState(); renderUI(); }
-        function modEnvite(type, amount) { state.envites[type] = Math.max(0, state.envites[type] + amount); renderUI(); }
-        function assignEnvite(type, team) { const val = state.envites[type]; if(val === 0) return; pushHistory(); addPoint(team, val); state.envites[type] = 0; saveState(); renderUI(); }
-        function setMano(team) { pushHistory(); state.mano = team; saveState(); renderUI(); }
+        function toggleWakeLock() {
+            settings.wakeLock = document.getElementById('wakeLockToggle').checked;
+            saveSettings(); handleWakeLock(); haptic();
+        }
+        async function handleWakeLock() {
+            if (!settings.wakeLock) { if (wakeLockSentinel) { await wakeLockSentinel.release(); wakeLockSentinel = null; } return; }
+            if ('wakeLock' in navigator && !wakeLockSentinel) { try { wakeLockSentinel = await navigator.wakeLock.request('screen'); } catch (err) {} }
+        }
+
+        function pushHistory() { historyStack.push(JSON.parse(JSON.stringify(state))); if(historyStack.length > 10) historyStack.shift(); }
+        function undo() { haptic(); if(historyStack.length === 0) return; state = historyStack.pop(); saveState(); renderUI(); }
+        function clearCenter() { haptic(); state.envites = { grande: 0, chica: 0, pares: 0, juego: 0 }; renderUI(); }
+
+        function addPoint(team, amount) { 
+            haptic(); 
+            // FIX 1: Auto-Reset Logic (Only allows point addition if game is active)
+            if (state.v1 >= settings.vacasNeeded || state.v2 >= settings.vacasNeeded) {
+                // If match is over, re-show modal to force new game action
+                const winner = state.v1 >= settings.vacasNeeded ? 1 : 2;
+                const wName = winner === 1 ? getTeamName('team1Name', 'EQUIPO AZUL') : getTeamName('team2Name', 'EQUIPO ROJO');
+                const color = winner === 1 ? 'var(--blue)' : 'var(--red)';
+                const score = `${state.v1} - ${state.v2}`;
+                
+                const html = `<span class="victory-team" style="color:${color}; margin-top: 15px">${wName}</span><div style="margin-top:10px; font-size:0.9rem; color:#888">¡PARTIDA FINALIZADA!</div><div class="victory-score" style="margin-top:15px">${score}</div>`;
+                document.getElementById('genericTitle').innerText = "VICTORIA";
+                document.getElementById('genericContent').innerHTML = html;
+                const b = document.getElementById('genericConfirmBtn'); b.innerText = "NUEVA PARTIDA"; 
+                b.onclick = () => { saveToHistory(true); resetMatch(false); stopConfetti(); closeModalDirect('genericModal'); };
+                openModal('genericModal'); 
+                return; // Block point addition
+            }
+            
+            pushHistory(); 
+            if(team === 1) state.s1 = Math.max(0, state.s1 + amount); else state.s2 = Math.max(0, state.s2 + amount); 
+            checkWinRound(); saveState(); renderUI(); 
+        }
+        
+        function modEnvite(type, amount) { haptic(); state.envites[type] = Math.max(0, state.envites[type] + amount); renderUI(); }
+        function assignEnvite(type, team) { haptic(); const val = state.envites[type]; if(val === 0) return; pushHistory(); addPoint(team, val); state.envites[type] = 0; saveState(); renderUI(); }
+
+        function getTeamName(id, defaultName) { const val = document.getElementById(id).value.trim(); return val ? val : defaultName; }
 
         function preTriggerOrdago(team) {
+            haptic();
             pendingOrdagoTeam = team;
-            const tName = team === 1 ? (document.getElementById('team1Name').value || "AZUL") : (document.getElementById('team2Name').value || "ROJO");
+            const tName = team === 1 ? getTeamName('team1Name', 'EQUIPO AZUL') : getTeamName('team2Name', 'EQUIPO ROJO');
             const color = team === 1 ? 'var(--blue)' : 'var(--red)';
+            
             document.getElementById('ordagoTitle').style.color = color;
-            document.getElementById('ordagoConfirmBtn').style.background = color;
-            document.getElementById('ordagoText').innerText = `¿Confirmas que ${tName} ganan el juego actual?`;
+            document.getElementById('ordagoText').innerHTML = `¿Confirmas que <strong style="color:${color}">${tName}</strong> ganan el juego actual?`;
             openModal('ordagoModal');
         }
-        function confirmOrdago() { if(pendingOrdagoTeam === 0) return; pushHistory(); const needed = settings.limit - (pendingOrdagoTeam === 1 ? state.s1 : state.s2); addPoint(pendingOrdagoTeam, needed); closeModalDirect('ordagoModal'); pendingOrdagoTeam = 0; }
+        function confirmOrdago() { haptic(); if(pendingOrdagoTeam === 0) return; pushHistory(); const needed = settings.limit - (pendingOrdagoTeam === 1 ? state.s1 : state.s2); addPoint(pendingOrdagoTeam, needed); closeModalDirect('ordagoModal'); pendingOrdagoTeam = 0; }
 
         function checkWinRound() { if(state.s1 >= settings.limit) winGame(1); else if(state.s2 >= settings.limit) winGame(2); }
+        
         function winGame(winner) {
             state.currentMatchLog.push({ s1: state.s1, s2: state.s2, winner });
             if(winner === 1) state.v1++; else state.v2++;
             state.s1 = 0; state.s2 = 0;
             Object.keys(state.envites).forEach(k => state.envites[k] = 0);
+            
+            const panel = document.getElementById(winner === 1 ? 'panel-1' : 'panel-2');
+            panel.classList.add(winner === 1 ? 'anim-win-blue' : 'anim-win-red');
+            setTimeout(() => panel.classList.remove('anim-win-blue', 'anim-win-red'), 800);
+
             if(state.v1 >= settings.vacasNeeded || state.v2 >= settings.vacasNeeded) {
                 setTimeout(() => {
-                    const wName = winner === 1 ? (document.getElementById('team1Name').value) : (document.getElementById('team2Name').value);
-                    showGenericModal("¡VICTORIA!", `¡${wName} han ganado la partida!`, () => { saveToHistory(true); resetMatch(false); });
-                }, 200);
+                    const wName = winner === 1 ? getTeamName('team1Name', 'EQUIPO AZUL') : getTeamName('team2Name', 'EQUIPO ROJO');
+                    const color = winner === 1 ? 'var(--blue)' : 'var(--red)';
+                    const score = `${state.v1} - ${state.v2}`;
+                    startConfetti(winner);
+                    
+                    const html = `
+                        <span class="victory-team" style="color:${color}; margin-top: 15px">${wName}</span>
+                        <div style="margin-top:10px; font-size:0.9rem; color:#888">HA GANADO LA PARTIDA</div>
+                        <div class="victory-score" style="margin-top:15px">${score}</div>
+                    `;
+                    
+                    document.getElementById('genericTitle').innerText = "VICTORIA";
+                    document.getElementById('genericContent').innerHTML = html;
+                    
+                    const b = document.getElementById('genericConfirmBtn');
+                    b.innerText = "NUEVA PARTIDA";
+                    b.onclick = () => { saveToHistory(true); resetMatch(false); stopConfetti(); closeModalDirect('genericModal'); };
+                    
+                    openModal('genericModal');
+
+                }, 600);
             }
+            saveState(); renderUI();
         }
 
-        // --- STORAGE & UTILS ---
+        function startConfetti(teamWinner) {
+            const cont = document.getElementById('confetti-container');
+            cont.style.display = 'block'; cont.innerHTML = '';
+            const mainColor = teamWinner === 1 ? '#3b82f6' : '#ef4444';
+            const colors = [mainColor, '#ffffff']; 
+            for(let i=0; i<100; i++) {
+                const p = document.createElement('div');
+                p.className = 'confetti-piece';
+                p.style.left = Math.random() * 100 + 'vw';
+                p.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                p.style.backgroundColor = colors[Math.floor(Math.random()*2)];
+                cont.appendChild(p);
+            }
+        }
+        function stopConfetti() { document.getElementById('confetti-container').style.display = 'none'; }
+
         function saveState() {
             const names = { t1: document.getElementById('team1Name').value, t2: document.getElementById('team2Name').value, n1a: document.getElementById('p1a').value, n1b: document.getElementById('p1b').value, n2a: document.getElementById('p2a').value, n2b: document.getElementById('p2b').value };
             localStorage.setItem('mus_state', JSON.stringify(state)); localStorage.setItem('mus_names', JSON.stringify(names));
@@ -523,100 +627,126 @@
             if(savedState) state = JSON.parse(savedState);
             if(savedNames) {
                 const n = JSON.parse(savedNames);
-                document.getElementById('team1Name').value = n.t1 || "EQUIPO AZUL"; document.getElementById('team2Name').value = n.t2 || "EQUIPO ROJO";
+                document.getElementById('team1Name').value = n.t1 || ""; document.getElementById('team2Name').value = n.t2 || "";
                 document.getElementById('p1a').value = n.n1a || ""; document.getElementById('p1b').value = n.n1b || "";
                 document.getElementById('p2a').value = n.n2a || ""; document.getElementById('p2b').value = n.n2b || "";
             }
         }
-        function saveSettings() { settings.limit = parseInt(document.getElementById('limitInput').value); settings.vacasNeeded = parseInt(document.getElementById('vacasInput').value); localStorage.setItem('mus_settings', JSON.stringify(settings)); renderUI(); }
-        function loadSettings() { const saved = localStorage.getItem('mus_settings'); if(saved) { settings = JSON.parse(saved); document.getElementById('limitInput').value = settings.limit; document.getElementById('vacasInput').value = settings.vacasNeeded; } }
+        function saveSettings() { 
+            settings.limit = parseInt(document.getElementById('limitInput').value); 
+            settings.vacasNeeded = parseInt(document.getElementById('vacasInput').value); 
+            settings.wakeLock = document.getElementById('wakeLockToggle').checked;
+            settings.oled = document.getElementById('oledToggle').checked;
+            localStorage.setItem('mus_settings', JSON.stringify(settings)); renderUI(); 
+        }
+        function loadSettings() { 
+            const saved = localStorage.getItem('mus_settings'); 
+            if(saved) { 
+                const s = JSON.parse(saved); settings = { ...settings, ...s };
+                document.getElementById('limitInput').value = settings.limit; 
+                document.getElementById('vacasInput').value = settings.vacasNeeded; 
+                document.getElementById('wakeLockToggle').checked = settings.wakeLock;
+                document.getElementById('oledToggle').checked = settings.oled;
+            } 
+        }
 
-        // --- UI RENDER ---
         function renderUI() {
             document.getElementById('score1').innerText = state.s1; document.getElementById('score2').innerText = state.s2;
-            Object.keys(state.envites).forEach(k => {
-                const el = document.getElementById(`val-${k}`);
-                if(el) el.innerText = state.envites[k];
-            });
+            Object.keys(state.envites).forEach(k => document.getElementById(`val-${k}`).innerText = state.envites[k]);
             const renderDots = (cid, wins) => {
                 const c = document.getElementById(cid); c.innerHTML = '';
                 for(let i=0; i<settings.vacasNeeded; i++) { const d = document.createElement('div'); d.className = 'set-dot' + (i < wins ? ' active' : ''); c.appendChild(d); }
             };
             renderDots('sets1', state.v1); renderDots('sets2', state.v2);
-            const m1 = document.getElementById('mano1'); const m2 = document.getElementById('mano2');
-            if(state.mano === 1) { m1.classList.add('active'); m2.classList.remove('active'); } 
-            else { m2.classList.add('active'); m1.classList.remove('active'); }
         }
 
-        // --- HISTORY RENDER ---
         function renderHistory() {
             const list = document.getElementById('historyList'); const data = JSON.parse(localStorage.getItem('mus_history') || "[]");
             if(data.length === 0) { list.innerHTML = '<div style="text-align:center; color:#666; padding:20px;">Sin historial</div>'; return; }
-            
             list.innerHTML = data.map((m, i) => {
                 let winClass = ''; if(m.v1 > m.v2) winClass = 'winner-blue'; else if(m.v2 > m.v1) winClass = 'winner-red';
-                
                 const tClass1 = m.totalP1 > m.totalP2 ? 'h-col-blue' : 'h-col-white';
                 const tClass2 = m.totalP2 > m.totalP1 ? 'h-col-red' : 'h-col-white';
+                const t1N = m.t1Name || "EQUIPO AZUL"; const t2N = m.t2Name || "EQUIPO ROJO";
                 
                 return `
                 <div class="history-item ${winClass}" id="hist-item-${i}">
                     <div class="h-summary" onclick="toggleHistoryDetails(${i})">
                         <div class="h-date-small">${m.date}</div>
-                        <div class="h-header-teams">
-                            <span style="color:var(--blue)">${m.t1Name}</span> 
-                            <span style="color:#666; font-size:0.8rem;">VS</span> 
-                            <span style="color:var(--red)">${m.t2Name}</span>
-                        </div>
-                        <div class="h-players-row">
-                             <span style="color:var(--blue); font-size:0.7rem">${m.players1}</span>
-                             <span style="color:var(--red); font-size:0.7rem">${m.players2}</span>
-                        </div>
-                        <div class="h-result">
-                            <span class="h-blue">${m.v1}</span> - <span class="h-red">${m.v2}</span>
-                        </div>
+                        <div class="h-header-teams"><span style="color:var(--blue)">${t1N}</span> <span style="color:#666; font-size:0.8rem;">VS</span> <span style="color:var(--red)">${t2N}</span></div>
+                        <div class="h-players-row"><span style="color:var(--blue); font-size:0.7rem">${m.players1}</span><span style="color:var(--red); font-size:0.7rem">${m.players2}</span></div>
+                        <div class="h-result"><span class="h-blue">${m.v1}</span> - <span class="h-red">${m.v2}</span></div>
                     </div>
                     <div class="h-details">
                         ${m.log.map((l, idx) => {
                             const c1 = l.s1 > l.s2 ? 'h-col-blue' : 'h-col-white';
                             const c2 = l.s2 > l.s1 ? 'h-col-red' : 'h-col-white';
-                            return `<div class="h-grid-row"><div class="${c1}">${l.s1}</div><div class="h-col-center">${l.winner === 'unfinished' ? 'PARCIAL' : 'JUEGO ' + (idx+1)}</div><div class="${c2}">${l.s2}</div></div>`;
+                            const label = l.winner === 'unfinished' ? 'PARCIAL' : `Juego ${idx+1}`;
+                            return `<div class="h-grid-row"><div class="${c1}">${l.s1}</div><div class="h-col-center">${label}</div><div class="${c2}">${l.s2}</div></div>`;
                         }).join('')}
-                        <div class="h-grid-row h-total-row">
-                            <div class="${tClass1}">${m.totalP1 || 0}</div>
-                            <div class="h-col-center" style="color:white">TOTAL</div>
-                            <div class="${tClass2}">${m.totalP2 || 0}</div>
-                        </div>
+                        <div class="h-grid-row h-total-row"><div class="${tClass1}">${m.totalP1 || 0}</div><div class="h-col-center" style="color:white">TOTAL</div><div class="${tClass2}">${m.totalP2 || 0}</div></div>
                     </div>
                 </div>`;
             }).join('');
         }
-        function toggleHistoryDetails(i) { document.getElementById(`hist-item-${i}`).classList.toggle('open'); }
+        function toggleHistoryDetails(i) { haptic(); document.getElementById(`hist-item-${i}`).classList.toggle('open'); }
 
         function saveToHistory(finished) {
             let history = JSON.parse(localStorage.getItem('mus_history') || "[]");
-            const t1Name = document.getElementById('team1Name').value || "EQ. AZUL"; const t2Name = document.getElementById('team2Name').value || "EQ. ROJO";
-            const n1a = document.getElementById('p1a').value || "J1"; const n1b = document.getElementById('p1b').value || "J2";
-            const n2a = document.getElementById('p2a').value || "J3"; const n2b = document.getElementById('p2b').value || "J4";
+            const t1Name = getTeamName('team1Name', 'EQUIPO AZUL'); const t2Name = getTeamName('team2Name', 'EQUIPO ROJO');
+            const n1a = document.getElementById('p1a').value || "Jugador 1"; const n1b = document.getElementById('p1b').value || "Jugador 2";
+            const n2a = document.getElementById('p2a').value || "Jugador 3"; const n2b = document.getElementById('p2b').value || "Jugador 4";
             let totalP1 = state.currentMatchLog.reduce((acc, curr) => acc + curr.s1, 0); let totalP2 = state.currentMatchLog.reduce((acc, curr) => acc + curr.s2, 0);
             const matchData = { date: new Date().toLocaleString(), t1Name, t2Name, players1: `${n1a} & ${n1b}`, players2: `${n2a} & ${n2b}`, v1: state.v1, v2: state.v2, totalP1, totalP2, log: state.currentMatchLog, finished };
             history.unshift(matchData); localStorage.setItem('mus_history', JSON.stringify(history));
         }
+        
+        function askSaveMatch() { haptic(); if(state.s1 === 0 && state.s2 === 0 && state.v1 === 0 && state.v2 === 0) return; 
+            document.getElementById('genericTitle').innerText = "Guardar Partida";
+            document.getElementById('genericContent').innerHTML = '<p style="margin-bottom: 20px; color: #ccc; line-height: 1.5;">¿Guardar el estado actual y salir?</p>';
+            const b = document.getElementById('genericConfirmBtn'); b.innerText="Aceptar"; b.onclick=()=>{ if(state.s1 > 0 || state.s2 > 0) state.currentMatchLog.push({ s1: state.s1, s2: state.s2, winner: 'unfinished' }); saveToHistory(false); resetMatch(false); closeModalDirect('genericModal'); };
+            openModal('genericModal'); 
+        }
+        
+        function askResetMatch() { haptic(); 
+            document.getElementById('genericTitle').innerText = "Reiniciar";
+            document.getElementById('genericContent').innerHTML = '<p style="margin-bottom: 20px; color: #ccc; line-height: 1.5;">¿Seguro que quieres borrar todo?</p>';
+            const b = document.getElementById('genericConfirmBtn'); b.innerText="Aceptar"; 
+            b.onclick=()=>{ resetMatch(false); closeModalDirect('settingsModal'); closeModalDirect('genericModal'); };
+            openModal('genericModal');
+        }
+        
+        function askClearHistory() { haptic();
+             document.getElementById('genericTitle').innerText = "Borrar Historial";
+             document.getElementById('genericContent').innerHTML = '<p style="margin-bottom: 20px; color: #ccc; line-height: 1.5;">¿Eliminar todo el historial?</p>';
+             const b = document.getElementById('genericConfirmBtn'); b.innerText="Borrar"; 
+             b.onclick=()=>{ localStorage.removeItem('mus_history'); renderHistory(); closeModalDirect('genericModal'); };
+             openModal('genericModal');
+        }
+        
+        function askExportHistory() { haptic(); exportHistory(); }
         function exportHistory() {
             const data = JSON.parse(localStorage.getItem('mus_history') || "[]"); if(data.length === 0) return;
             let txt = "HISTORIAL CONTADORMUS\n=====================\n\n";
-            data.forEach(m => { txt += `FECHA: ${m.date}\nENCUENTRO: ${m.t1Name} (${m.players1}) vs ${m.t2Name} (${m.players2})\nRESULTADO VACAS: ${m.v1} - ${m.v2}\nTOTAL PIEDRAS: ${m.totalP1} - ${m.totalP2}\n----------------------------------------\n`; });
+            data.forEach(m => { 
+                const t1N = m.t1Name || "EQUIPO AZUL"; const t2N = m.t2Name || "EQUIPO ROJO";
+                txt += `FECHA: ${m.date}\n`;
+                txt += `ENCUENTRO: ${t1N} [${m.players1}] vs ${t2N} [${m.players2}]\n`;
+                txt += `RESULTADO VACAS: ${m.v1} - ${m.v2}\n`;
+                txt += `DETALLE JUEGOS:\n`;
+                m.log.forEach((l,i)=> txt+= `  Juego ${i+1}: ${l.s1}-${l.s2}\n`);
+                txt += `PUNTOS TOTALES: ${m.totalP1} - ${m.totalP2}\n`;
+                txt += `----------------------------------------\n\n`; 
+            });
             const blob = new Blob([txt], { type: "text/plain" }); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `mus_historial.txt`; link.click();
         }
-        function askSaveMatch() { if(state.s1 === 0 && state.s2 === 0 && state.v1 === 0 && state.v2 === 0) return; showGenericModal("Guardar Partida", "¿Guardar el estado actual y salir?", () => { if(state.s1 > 0 || state.s2 > 0) state.currentMatchLog.push({ s1: state.s1, s2: state.s2, winner: 'unfinished' }); saveToHistory(false); resetMatch(false); }); }
-        function askResetMatch() { showGenericModal("Reiniciar", "¿Seguro que quieres borrar todo el progreso actual?", () => { resetMatch(false); closeModalDirect('settingsModal'); }); }
-        function askClearHistory() { showGenericModal("Borrar Historial", "¿Eliminar permanentemente todas las partidas guardadas?", () => { localStorage.removeItem('mus_history'); renderHistory(); }); }
-        function askExportHistory() { exportHistory(); }
-        function resetMatch(ask = true) { state.s1 = 0; state.s2 = 0; state.v1 = 0; state.v2 = 0; state.currentMatchLog = []; state.envites = { grande: 0, chica: 0, pares: 0, juego: 0 }; historyStack = []; saveState(); renderUI(); }
-        function showGenericModal(title, text, callback) { document.getElementById('genericTitle').innerText = title; document.getElementById('genericText').innerText = text; const b = document.getElementById('genericConfirmBtn'); if(callback) { b.style.display='inline-block'; b.onclick=()=>{callback(); closeModalDirect('genericModal');} } else { b.style.display='none'; } openModal('genericModal'); }
-        function openModal(id) { const el = document.getElementById(id); if(el) { el.classList.add('active'); if(id === 'historyModal') renderHistory(); } }
+
+        function resetMatch(ask = true) { 
+            state.s1 = 0; state.s2 = 0; state.v1 = 0; state.v2 = 0; state.currentMatchLog = []; state.envites = { grande: 0, chica: 0, pares: 0, juego: 0 }; historyStack = []; saveState(); renderUI(); 
+        }
+        function openModal(id) { haptic(); const el = document.getElementById(id); if(el) { el.classList.add('active'); if(id === 'historyModal') renderHistory(); } }
         function closeModal(e, id) { if(e.target.classList.contains('modal-overlay')) document.getElementById(id).classList.remove('active'); }
-        function closeModalDirect(id) { document.getElementById(id).classList.remove('active'); }
+        function closeModalDirect(id) { haptic(); document.getElementById(id).classList.remove('active'); }
     </script>
 </body>
 </html>
