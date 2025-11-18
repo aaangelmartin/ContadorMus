@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>ContadorMus</title>
+    <style>
+        :root {
+            --bg-body: #0f0f0f;
+            --bg-card: #1a1a1a;
+            --bg-card-highlight: #252525;
+            --border: #333;
+            
+            /* Colores de Equipos */
+            --blue: #3b82f6;
+            --blue-dim: rgba(59, 130, 246, 0.1);
+            --red: #ef4444;
+            --red-dim: rgba(239, 68, 68, 0.1);
+            
+            /* Textos */
+            --text-white: #f3f4f6;
+            --text-gray: #9ca3af;
+            --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; outline: none; }
+
+        body {
+            margin: 0;
+            background-color: var(--bg-body);
+            color: var(--text-white);
+            font-family: var(--font-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* --- HEADER --- */
+        header {
+            height: 55px;
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 15px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(20, 20, 20, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 10;
+        }
+
+        .logo { font-weight: 800; letter-spacing: 1px; font-size: 1rem; color: var(--text-white); }
+        
+        .header-actions { display: flex; gap: 10px; }
+        .icon-btn {
+            background: transparent; border: 1px solid var(--border); color: var(--text-white);
+            width: 36px; height: 36px; border-radius: 8px; font-size: 1.1rem;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+            transition: 0.2s;
+        }
+        .icon-btn:active { background: var(--bg-card-highlight); transform: scale(0.95); }
+
+        /* --- MAIN LAYOUT --- */
+        main {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 180px 1fr; 
+            gap: 8px;
+            padding: 10px;
+            height: calc(100vh - 55px);
+        }
+
+        /* --- TEAM COLUMNS --- */
+        .team-panel {
+            background: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px 5px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.1s;
+            justify-content: flex-start; 
+        }
+        .team-panel:active { background: var(--bg-card-highlight); }
+        
+        .team-blue { border-top: 4px solid var(--blue); box-shadow: 0 0 15px rgba(59, 130, 246, 0.05); }
+        .team-red { border-top: 4px solid var(--red); box-shadow: 0 0 15px rgba(239, 68, 68, 0.05); }
+
+        /* Inputs & Mano */
+        .names-group { 
+            width: 100%; text-align: center; z-index: 2; margin-bottom: 5px; 
+            display: flex; flex-direction: column; align-items: center; 
+        }
+        
+        .mano-btn {
+            font-size: 0.6rem; font-weight: 900; letter-spacing: 1px;
+            padding: 3px 8px; border-radius: 10px; margin-bottom: 4px;
+            background: #252525; color: #555; border: 1px solid #333;
+            cursor: pointer; transition: 0.3s;
+        }
+        .team-blue .mano-btn.active { background: var(--blue); color: white; border-color: var(--blue); box-shadow: 0 0 10px var(--blue-dim); }
+        .team-red .mano-btn.active { background: var(--red); color: white; border-color: var(--red); box-shadow: 0 0 10px var(--red-dim); }
+
+        .team-name-input {
+            background: transparent; border: none; 
+            text-align: center; width: 98%; font-size: 0.9rem; margin-bottom: 4px;
+            padding: 4px; border-radius: 4px; font-weight: 800; text-transform: uppercase;
+        }
+        .team-blue .team-name-input { color: var(--blue); }
+        .team-red .team-name-input { color: var(--red); }
+        .team-name-input:focus { background: #333; }
+
+        .player-input {
+            background: transparent; border: none; color: var(--text-gray);
+            text-align: center; width: 95%; font-size: 0.75rem; margin-bottom: 1px;
+            padding: 2px; border-radius: 4px; font-weight: 500;
+        }
+        .player-input:focus { background: #333; color: white; }
+
+        /* Score Area */
+        .score-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            pointer-events: none;
+        }
+
+        .sets-row { display: flex; gap: 8px; margin-bottom: 25px; height: 12px; }
+        .set-dot { width: 10px; height: 10px; border-radius: 50%; background: #333; transition: 0.3s; border: 1px solid rgba(255,255,255,0.1); }
+        .team-blue .set-dot.active { background: var(--blue); box-shadow: 0 0 8px var(--blue); border-color: var(--blue); }
+        .team-red .set-dot.active { background: var(--red); box-shadow: 0 0 8px var(--red); border-color: var(--red); }
+
+        .score-big {
+            font-size: 5rem; font-weight: 200; line-height: 0.9;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+
+        /* Botones de Equipo */
+        .team-bottom { width: 100%; display: flex; flex-direction: column; gap: 8px; z-index: 5; }
+        .team-increments { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 0 4px; }
+        .t-inc-btn {
+            background: #2a2a2a; border: none; color: #ccc; border-radius: 6px; 
+            padding: 12px 0; font-size: 0.9rem; cursor: pointer; font-weight: 700;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .t-inc-btn.minus { color: #ff8888; background: rgba(60, 20, 20, 0.5); }
+        .t-inc-btn:active { background: #444; color: white; transform: translateY(1px); }
+
+        /* Órdago */
+        .btn-ordago {
+            padding: 12px 0; border-radius: 8px; 
+            font-size: 0.8rem; font-weight: 800; letter-spacing: 1px;
+            margin: 0 4px; cursor: pointer; 
+            display: flex; justify-content: center; align-items: center; gap: 6px;
+            transition: 0.2s; border-width: 1px; border-style: solid;
+        }
+        .ordago-blue { background: var(--blue-dim); border-color: rgba(59, 130, 246, 0.3); color: var(--blue); }
+        .ordago-blue:active { background: var(--blue); color: white; }
+        .ordago-red { background: var(--red-dim); border-color: rgba(239, 68, 68, 0.3); color: var(--red); }
+        .ordago-red:active { background: var(--red); color: white; }
+
+        /* --- CENTER COLUMN & ACTIONS --- */
+        .center-panel { 
+            display: flex; flex-direction: column; 
+            justify-content: space-between; 
+            height: 100%;
+        }
+        
+        /* Bloque central (Limpiar + Envites) Centrado Verticalmente */
+        .center-content {
+            flex: 1;
+            display: flex; flex-direction: column; gap: 8px; 
+            justify-content: center; /* CLAVE: Centrado Vertical */
+        }
+
+        .envite-card {
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
+            padding: 5px; display: flex; flex-direction: column;
+        }
+        .envite-header { 
+            display: flex; justify-content: center; /* Centrado de títulos */
+            align-items: center; margin-bottom: 4px; padding: 0 2px; 
+        }
+        .envite-label { font-size: 0.6rem; text-transform: uppercase; color: var(--text-gray); font-weight: bold; letter-spacing: 1px; }
+        
+        .envite-main-row {
+            display: flex; justify-content: space-between; align-items: center;
+            background: #111; border-radius: 6px; padding: 2px; margin-bottom: 4px;
+        }
+        .arrow-btn { background: none; border: none; font-size: 1.2rem; padding: 2px 8px; cursor: pointer; }
+        .arrow-l { color: var(--blue); }
+        .arrow-r { color: var(--red); }
+        .envite-val { 
+            font-size: 1.3rem; font-weight: 700; color: white; min-width: 35px; 
+            text-align: center; cursor: pointer; padding: 2px 5px; border-radius: 4px;
+        }
+        .envite-val:active { background: rgba(255,255,255,0.1); }
+        .increments-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; }
+        .inc-btn {
+            background: #2a2a2a; border: none; color: #aaa; border-radius: 4px;
+            padding: 8px 0; font-size: 0.75rem; font-weight: bold; cursor: pointer;
+        }
+        .inc-btn.minus { color: #ff8888; background: rgba(60, 20, 20, 0.5); }
+        .inc-btn:active { background: #444; color: white; }
+
+        /* Botones Utilitarios Centrales */
+        .utility-btn {
+            background: #222; border: 1px solid #444; color: #888;
+            border-radius: 8px; font-weight: bold; cursor: pointer;
+            text-transform: uppercase; letter-spacing: 1px;
+            transition: 0.2s; width: 100%; padding: 12px 0; font-size: 0.8rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .utility-btn:active { background: #444; color: white; }
+
+        /* Botón Limpiar (Integrado en el bloque central) */
+        .btn-clear {
+            /* No margin needed as gap is handled by center-content */
+        }
+        
+        /* Area inferior para Deshacer */
+        .center-bottom-actions {
+            /* Margen para alinear con la botonera de equipos */
+            margin-bottom: 55px; 
+        }
+        .btn-undo-center {
+            padding: 15px 0; font-size: 0.85rem; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        /* --- MODALS --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
+            z-index: 100; display: none; align-items: center; justify-content: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-card {
+            background: #1e1e1e; width: 90%; max-width: 380px;
+            border-radius: 20px; padding: 25px; max-height: 90vh; overflow-y: auto;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8); border: 1px solid #444;
+            animation: popIn 0.2s ease-out;
+        }
+        @keyframes popIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+        .modal-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 20px; display: flex; justify-content: space-between; color: var(--text-white); }
+        .close-x { cursor: pointer; color: var(--text-gray); padding: 5px; }
+        .btn-primary { width: 100%; padding: 12px; background: var(--blue); color: white; border: none; border-radius: 10px; font-size: 1rem; font-weight: bold; margin-top: 20px; cursor: pointer; }
+        .btn-danger { width: 100%; padding: 12px; background: transparent; color: var(--red); border: 1px solid var(--red); border-radius: 10px; font-size: 1rem; margin-top: 10px; cursor: pointer; }
+        .setting-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #333; }
+        select, input[type="number"] { background: #333; color: white; border: 1px solid #555; padding: 8px; border-radius: 6px; font-size: 1rem; }
+
+        /* --- HISTORY --- */
+        .history-item {
+            background: #222; border-radius: 8px; margin-bottom: 12px; 
+            border: 1px solid #333; overflow: hidden;
+            border-left: 4px solid #444;
+        }
+        .history-item.winner-blue { border-left-color: var(--blue); }
+        .history-item.winner-red { border-left-color: var(--red); }
+
+        .h-summary { 
+            padding: 20px 15px; cursor: pointer; 
+            display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; gap: 8px;
+        }
+        .h-summary:hover { background: #2a2a2a; }
+        
+        .h-date-small { font-size: 0.7rem; color: #666; margin-bottom: 2px; }
+        
+        .h-header-teams { 
+            font-weight: 800; font-size: 1.1rem; color: #eee; text-transform: uppercase;
+            text-align: center; width: 100%;
+            display: flex; justify-content: center; align-items: center; gap: 8px;
+        }
+
+        .h-players-row {
+            font-size: 0.75rem; color: #999; text-align: center; 
+            margin-bottom: 5px; width: 100%;
+            display: flex; justify-content: center; gap: 10px;
+        }
+
+        .h-result { 
+            font-size: 1.8rem; font-weight: 900; background: #111; 
+            padding: 8px 20px; border-radius: 8px; border: 1px solid #333;
+            letter-spacing: 2px;
+        }
+        .h-blue { color: var(--blue); }
+        .h-red { color: var(--red); }
+        
+        .h-col-blue { text-align: center; color: var(--blue); font-weight: 700; }
+        .h-col-red { text-align: center; color: var(--red); font-weight: 700; }
+        .h-col-white { text-align: center; color: rgba(255,255,255,0.3); font-weight: 400; } 
+
+        .h-details { padding: 0; background: #1d1d1d; display: none; border-top: 1px solid #333; }
+        .history-item.open .h-details { display: block; }
+
+        .h-grid-row {
+            display: grid;
+            grid-template-columns: 1fr 100px 1fr; 
+            align-items: center; text-align: center;
+            padding: 12px 10px; border-bottom: 1px solid #2a2a2a;
+        }
+        .h-grid-row:last-child { border-bottom: none; }
+        
+        .h-col-center { text-align: center; color: #888; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        .h-total-row { background: #252525; font-weight: 800; font-size: 1rem; }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">ContadorMus</div>
+        <div class="header-actions">
+            <button class="icon-btn" onclick="askSaveMatch()" title="Guardar">💾</button>
+            <button class="icon-btn" onclick="openModal('historyModal')" title="Historial">📜</button>
+            <button class="icon-btn" onclick="openModal('settingsModal')" title="Ajustes">⚙️</button>
+        </div>
+    </header>
+
+    <main>
+        <div class="team-panel team-blue" onclick="addPoint(1, 1)">
+            <div class="names-group" onclick="event.stopPropagation()">
+                <button class="mano-btn" id="mano1" onclick="setMano(1)">MANO</button>
+                <input id="team1Name" class="team-name-input" placeholder="EQUIPO AZUL" value="EQUIPO AZUL" onchange="saveState()">
+                <input id="p1a" class="player-input" placeholder="Jugador 1" onchange="saveState()">
+                <input id="p1b" class="player-input" placeholder="Jugador 2" onchange="saveState()">
+            </div>
+            
+            <div class="score-container">
+                <div class="sets-row" id="sets1"></div>
+                <div class="score-big" id="score1">0</div>
+            </div>
+            
+            <div class="team-bottom" onclick="event.stopPropagation()">
+                <div class="team-increments">
+                    <button class="t-inc-btn minus" onclick="addPoint(1, -1)">-1</button>
+                    <button class="t-inc-btn" onclick="addPoint(1, 1)">+1</button>
+                    <button class="t-inc-btn" onclick="addPoint(1, 2)">+2</button>
+                    <button class="t-inc-btn" onclick="addPoint(1, 5)">+5</button>
+                </div>
+                <button class="btn-ordago ordago-blue" onclick="preTriggerOrdago(1)">
+                    <span>⚡</span> ÓRDAGO
+                </button>
+            </div>
+        </div>
+
+        <div class="center-panel">
+            
+            <div class="center-content">
+                <button class="utility-btn btn-clear" onclick="clearCenter()">
+                     LIMPIAR
+                </button>
+
+                <script>
+                    const enviteTypes = ['grande', 'chica', 'pares', 'juego'];
+                    enviteTypes.forEach(type => {
+                        document.write(`
+                            <div class="envite-card">
+                                <div class="envite-header"><span class="envite-label">${type}</span></div>
+                                <div class="envite-main-row">
+                                    <button class="arrow-btn arrow-l" onclick="assignEnvite('${type}', 1)">◄</button>
+                                    <span class="envite-val" id="val-${type}" onclick="modEnvite('${type}', 1)">0</span>
+                                    <button class="arrow-btn arrow-r" onclick="assignEnvite('${type}', 2)">►</button>
+                                </div>
+                                <div class="increments-row">
+                                    <button class="inc-btn minus" onclick="modEnvite('${type}', -1)">-1</button>
+                                    <button class="inc-btn" onclick="modEnvite('${type}', 1)">+1</button>
+                                    <button class="inc-btn" onclick="modEnvite('${type}', 2)">+2</button>
+                                    <button class="inc-btn" onclick="modEnvite('${type}', 5)">+5</button>
+                                </div>
+                            </div>
+                        `);
+                    });
+                </script>
+            </div>
+
+            <div class="center-bottom-actions">
+                <button class="utility-btn btn-undo-center" onclick="undo()">
+                    DESHACER
+                </button>
+            </div>
+
+        </div>
+
+        <div class="team-panel team-red" onclick="addPoint(2, 1)">
+            <div class="names-group" onclick="event.stopPropagation()">
+                <button class="mano-btn" id="mano2" onclick="setMano(2)">MANO</button>
+                <input id="team2Name" class="team-name-input" placeholder="EQUIPO ROJO" value="EQUIPO ROJO" onchange="saveState()">
+                <input id="p2a" class="player-input" placeholder="Jugador 3" onchange="saveState()">
+                <input id="p2b" class="player-input" placeholder="Jugador 4" onchange="saveState()">
+            </div>
+
+            <div class="score-container">
+                <div class="sets-row" id="sets2"></div>
+                <div class="score-big" id="score2">0</div>
+            </div>
+            
+            <div class="team-bottom" onclick="event.stopPropagation()">
+                <div class="team-increments">
+                    <button class="t-inc-btn minus" onclick="addPoint(2, -1)">-1</button>
+                    <button class="t-inc-btn" onclick="addPoint(2, 1)">+1</button>
+                    <button class="t-inc-btn" onclick="addPoint(2, 2)">+2</button>
+                    <button class="t-inc-btn" onclick="addPoint(2, 5)">+5</button>
+                </div>
+                <button class="btn-ordago ordago-red" onclick="preTriggerOrdago(2)">
+                    <span>⚡</span> ÓRDAGO
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <div id="genericModal" class="modal-overlay" onclick="closeModal(event, 'genericModal')">
+        <div class="modal-card" style="text-align: center;">
+            <div class="modal-title" style="justify-content: center;" id="genericTitle">Aviso</div>
+            <p style="margin-bottom: 20px; color: #ccc; line-height: 1.5;" id="genericText">Mensaje...</p>
+            <button class="btn-primary" id="genericConfirmBtn">Aceptar</button>
+            <button class="btn-danger" style="border: none; color: #888" onclick="closeModalDirect('genericModal')">Cancelar</button>
+        </div>
+    </div>
+
+    <div id="settingsModal" class="modal-overlay" onclick="closeModal(event, 'settingsModal')">
+        <div class="modal-card">
+            <div class="modal-title">Configuración <span class="close-x" onclick="closeModalDirect('settingsModal')">✕</span></div>
+            <div class="setting-item">
+                <span>Puntos por Juego</span>
+                <select id="limitInput" onchange="saveSettings()"><option value="30">30 Puntos</option><option value="40">40 Puntos</option></select>
+            </div>
+            <div class="setting-item">
+                <span>Juegos para Ganar</span>
+                <input type="number" id="vacasInput" value="3" min="1" max="9" style="width: 60px; text-align: center;" onchange="saveSettings()">
+            </div>
+            <button class="btn-primary" onclick="closeModalDirect('settingsModal')">Aceptar</button>
+            <button class="btn-danger" onclick="askResetMatch()">Reiniciar Partida</button>
+        </div>
+    </div>
+
+    <div id="historyModal" class="modal-overlay" onclick="closeModal(event, 'historyModal')">
+        <div class="modal-card">
+            <div class="modal-title">Historial <span class="close-x" onclick="closeModalDirect('historyModal')">✕</span></div>
+            <div id="historyList" style="max-height: 500px; overflow-y: auto; padding-right: 5px;"></div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-primary" style="flex:1; margin-top:15px" onclick="askExportHistory()">Descargar</button>
+                <button class="btn-danger" style="flex:1; margin-top:15px;" onclick="askClearHistory()">Borrar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="ordagoModal" class="modal-overlay" onclick="closeModal(event, 'ordagoModal')">
+        <div class="modal-card" style="text-align: center;">
+            <div class="modal-title" style="justify-content: center; font-size: 1.5rem;" id="ordagoTitle">⚡ ÓRDAGO</div>
+            <p style="margin-bottom: 20px; color: #ccc;" id="ordagoText">¿El Equipo X gana el juego?</p>
+            <button class="btn-primary" id="ordagoConfirmBtn" onclick="confirmOrdago()">CONFIRMAR VICTORIA</button>
+            <button class="btn-danger" style="border: none; color: #888" onclick="closeModalDirect('ordagoModal')">Cancelar</button>
+        </div>
+    </div>
+
+    <script>
+        let state = { s1: 0, s2: 0, v1: 0, v2: 0, envites: { grande: 0, chica: 0, pares: 0, juego: 0 }, currentMatchLog: [], startDate: new Date().getTime(), mano: 1 };
+        let settings = { limit: 30, vacasNeeded: 3 };
+        let historyStack = []; 
+        let pendingOrdagoTeam = 0; 
+
+        document.addEventListener('DOMContentLoaded', () => { loadSettings(); loadState(); renderUI(); });
+
+        // --- LOGIC ---
+        function pushHistory() { historyStack.push(JSON.parse(JSON.stringify(state))); if(historyStack.length > 10) historyStack.shift(); }
+        function undo() { if(historyStack.length === 0) return; state = historyStack.pop(); saveState(); renderUI(); }
+        
+        // Clear center visual only
+        function clearCenter() {
+            state.envites = { grande: 0, chica: 0, pares: 0, juego: 0 };
+            renderUI(); 
+        }
+
+        function addPoint(team, amount) { pushHistory(); if(team === 1) state.s1 = Math.max(0, state.s1 + amount); else state.s2 = Math.max(0, state.s2 + amount); checkWinRound(); saveState(); renderUI(); }
+        function modEnvite(type, amount) { state.envites[type] = Math.max(0, state.envites[type] + amount); renderUI(); }
+        function assignEnvite(type, team) { const val = state.envites[type]; if(val === 0) return; pushHistory(); addPoint(team, val); state.envites[type] = 0; saveState(); renderUI(); }
+        function setMano(team) { pushHistory(); state.mano = team; saveState(); renderUI(); }
+
+        function preTriggerOrdago(team) {
+            pendingOrdagoTeam = team;
+            const tName = team === 1 ? (document.getElementById('team1Name').value || "AZUL") : (document.getElementById('team2Name').value || "ROJO");
+            const color = team === 1 ? 'var(--blue)' : 'var(--red)';
+            document.getElementById('ordagoTitle').style.color = color;
+            document.getElementById('ordagoConfirmBtn').style.background = color;
+            document.getElementById('ordagoText').innerText = `¿Confirmas que ${tName} ganan el juego actual?`;
+            openModal('ordagoModal');
+        }
+        function confirmOrdago() { if(pendingOrdagoTeam === 0) return; pushHistory(); const needed = settings.limit - (pendingOrdagoTeam === 1 ? state.s1 : state.s2); addPoint(pendingOrdagoTeam, needed); closeModalDirect('ordagoModal'); pendingOrdagoTeam = 0; }
+
+        function checkWinRound() { if(state.s1 >= settings.limit) winGame(1); else if(state.s2 >= settings.limit) winGame(2); }
+        function winGame(winner) {
+            state.currentMatchLog.push({ s1: state.s1, s2: state.s2, winner });
+            if(winner === 1) state.v1++; else state.v2++;
+            state.s1 = 0; state.s2 = 0;
+            Object.keys(state.envites).forEach(k => state.envites[k] = 0);
+            if(state.v1 >= settings.vacasNeeded || state.v2 >= settings.vacasNeeded) {
+                setTimeout(() => {
+                    const wName = winner === 1 ? (document.getElementById('team1Name').value) : (document.getElementById('team2Name').value);
+                    showGenericModal("¡VICTORIA!", `¡${wName} han ganado la partida!`, () => { saveToHistory(true); resetMatch(false); });
+                }, 200);
+            }
+        }
+
+        // --- STORAGE & UTILS ---
+        function saveState() {
+            const names = { t1: document.getElementById('team1Name').value, t2: document.getElementById('team2Name').value, n1a: document.getElementById('p1a').value, n1b: document.getElementById('p1b').value, n2a: document.getElementById('p2a').value, n2b: document.getElementById('p2b').value };
+            localStorage.setItem('mus_state', JSON.stringify(state)); localStorage.setItem('mus_names', JSON.stringify(names));
+        }
+        function loadState() {
+            const savedState = localStorage.getItem('mus_state'); const savedNames = localStorage.getItem('mus_names');
+            if(savedState) state = JSON.parse(savedState);
+            if(savedNames) {
+                const n = JSON.parse(savedNames);
+                document.getElementById('team1Name').value = n.t1 || "EQUIPO AZUL"; document.getElementById('team2Name').value = n.t2 || "EQUIPO ROJO";
+                document.getElementById('p1a').value = n.n1a || ""; document.getElementById('p1b').value = n.n1b || "";
+                document.getElementById('p2a').value = n.n2a || ""; document.getElementById('p2b').value = n.n2b || "";
+            }
+        }
+        function saveSettings() { settings.limit = parseInt(document.getElementById('limitInput').value); settings.vacasNeeded = parseInt(document.getElementById('vacasInput').value); localStorage.setItem('mus_settings', JSON.stringify(settings)); renderUI(); }
+        function loadSettings() { const saved = localStorage.getItem('mus_settings'); if(saved) { settings = JSON.parse(saved); document.getElementById('limitInput').value = settings.limit; document.getElementById('vacasInput').value = settings.vacasNeeded; } }
+
+        // --- UI RENDER ---
+        function renderUI() {
+            document.getElementById('score1').innerText = state.s1; document.getElementById('score2').innerText = state.s2;
+            Object.keys(state.envites).forEach(k => {
+                const el = document.getElementById(`val-${k}`);
+                if(el) el.innerText = state.envites[k];
+            });
+            const renderDots = (cid, wins) => {
+                const c = document.getElementById(cid); c.innerHTML = '';
+                for(let i=0; i<settings.vacasNeeded; i++) { const d = document.createElement('div'); d.className = 'set-dot' + (i < wins ? ' active' : ''); c.appendChild(d); }
+            };
+            renderDots('sets1', state.v1); renderDots('sets2', state.v2);
+            const m1 = document.getElementById('mano1'); const m2 = document.getElementById('mano2');
+            if(state.mano === 1) { m1.classList.add('active'); m2.classList.remove('active'); } 
+            else { m2.classList.add('active'); m1.classList.remove('active'); }
+        }
+
+        // --- HISTORY RENDER ---
+        function renderHistory() {
+            const list = document.getElementById('historyList'); const data = JSON.parse(localStorage.getItem('mus_history') || "[]");
+            if(data.length === 0) { list.innerHTML = '<div style="text-align:center; color:#666; padding:20px;">Sin historial</div>'; return; }
+            
+            list.innerHTML = data.map((m, i) => {
+                let winClass = ''; if(m.v1 > m.v2) winClass = 'winner-blue'; else if(m.v2 > m.v1) winClass = 'winner-red';
+                
+                const tClass1 = m.totalP1 > m.totalP2 ? 'h-col-blue' : 'h-col-white';
+                const tClass2 = m.totalP2 > m.totalP1 ? 'h-col-red' : 'h-col-white';
+                
+                return `
+                <div class="history-item ${winClass}" id="hist-item-${i}">
+                    <div class="h-summary" onclick="toggleHistoryDetails(${i})">
+                        <div class="h-date-small">${m.date}</div>
+                        <div class="h-header-teams">
+                            <span style="color:var(--blue)">${m.t1Name}</span> 
+                            <span style="color:#666; font-size:0.8rem;">VS</span> 
+                            <span style="color:var(--red)">${m.t2Name}</span>
+                        </div>
+                        <div class="h-players-row">
+                             <span style="color:var(--blue); font-size:0.7rem">${m.players1}</span>
+                             <span style="color:var(--red); font-size:0.7rem">${m.players2}</span>
+                        </div>
+                        <div class="h-result">
+                            <span class="h-blue">${m.v1}</span> - <span class="h-red">${m.v2}</span>
+                        </div>
+                    </div>
+                    <div class="h-details">
+                        ${m.log.map((l, idx) => {
+                            const c1 = l.s1 > l.s2 ? 'h-col-blue' : 'h-col-white';
+                            const c2 = l.s2 > l.s1 ? 'h-col-red' : 'h-col-white';
+                            return `<div class="h-grid-row"><div class="${c1}">${l.s1}</div><div class="h-col-center">${l.winner === 'unfinished' ? 'PARCIAL' : 'JUEGO ' + (idx+1)}</div><div class="${c2}">${l.s2}</div></div>`;
+                        }).join('')}
+                        <div class="h-grid-row h-total-row">
+                            <div class="${tClass1}">${m.totalP1 || 0}</div>
+                            <div class="h-col-center" style="color:white">TOTAL</div>
+                            <div class="${tClass2}">${m.totalP2 || 0}</div>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+        function toggleHistoryDetails(i) { document.getElementById(`hist-item-${i}`).classList.toggle('open'); }
+
+        function saveToHistory(finished) {
+            let history = JSON.parse(localStorage.getItem('mus_history') || "[]");
+            const t1Name = document.getElementById('team1Name').value || "EQ. AZUL"; const t2Name = document.getElementById('team2Name').value || "EQ. ROJO";
+            const n1a = document.getElementById('p1a').value || "J1"; const n1b = document.getElementById('p1b').value || "J2";
+            const n2a = document.getElementById('p2a').value || "J3"; const n2b = document.getElementById('p2b').value || "J4";
+            let totalP1 = state.currentMatchLog.reduce((acc, curr) => acc + curr.s1, 0); let totalP2 = state.currentMatchLog.reduce((acc, curr) => acc + curr.s2, 0);
+            const matchData = { date: new Date().toLocaleString(), t1Name, t2Name, players1: `${n1a} & ${n1b}`, players2: `${n2a} & ${n2b}`, v1: state.v1, v2: state.v2, totalP1, totalP2, log: state.currentMatchLog, finished };
+            history.unshift(matchData); localStorage.setItem('mus_history', JSON.stringify(history));
+        }
+        function exportHistory() {
+            const data = JSON.parse(localStorage.getItem('mus_history') || "[]"); if(data.length === 0) return;
+            let txt = "HISTORIAL CONTADORMUS\n=====================\n\n";
+            data.forEach(m => { txt += `FECHA: ${m.date}\nENCUENTRO: ${m.t1Name} (${m.players1}) vs ${m.t2Name} (${m.players2})\nRESULTADO VACAS: ${m.v1} - ${m.v2}\nTOTAL PIEDRAS: ${m.totalP1} - ${m.totalP2}\n----------------------------------------\n`; });
+            const blob = new Blob([txt], { type: "text/plain" }); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `mus_historial.txt`; link.click();
+        }
+        function askSaveMatch() { if(state.s1 === 0 && state.s2 === 0 && state.v1 === 0 && state.v2 === 0) return; showGenericModal("Guardar Partida", "¿Guardar el estado actual y salir?", () => { if(state.s1 > 0 || state.s2 > 0) state.currentMatchLog.push({ s1: state.s1, s2: state.s2, winner: 'unfinished' }); saveToHistory(false); resetMatch(false); }); }
+        function askResetMatch() { showGenericModal("Reiniciar", "¿Seguro que quieres borrar todo el progreso actual?", () => { resetMatch(false); closeModalDirect('settingsModal'); }); }
+        function askClearHistory() { showGenericModal("Borrar Historial", "¿Eliminar permanentemente todas las partidas guardadas?", () => { localStorage.removeItem('mus_history'); renderHistory(); }); }
+        function askExportHistory() { exportHistory(); }
+        function resetMatch(ask = true) { state.s1 = 0; state.s2 = 0; state.v1 = 0; state.v2 = 0; state.currentMatchLog = []; state.envites = { grande: 0, chica: 0, pares: 0, juego: 0 }; historyStack = []; saveState(); renderUI(); }
+        function showGenericModal(title, text, callback) { document.getElementById('genericTitle').innerText = title; document.getElementById('genericText').innerText = text; const b = document.getElementById('genericConfirmBtn'); if(callback) { b.style.display='inline-block'; b.onclick=()=>{callback(); closeModalDirect('genericModal');} } else { b.style.display='none'; } openModal('genericModal'); }
+        function openModal(id) { const el = document.getElementById(id); if(el) { el.classList.add('active'); if(id === 'historyModal') renderHistory(); } }
+        function closeModal(e, id) { if(e.target.classList.contains('modal-overlay')) document.getElementById(id).classList.remove('active'); }
+        function closeModalDirect(id) { document.getElementById(id).classList.remove('active'); }
+    </script>
+</body>
+</html>
